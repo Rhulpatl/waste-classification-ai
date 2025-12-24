@@ -24,22 +24,34 @@ def load_model():
 model = load_model()
 
 
-# --- PREDICTION FUNCTION ---
 def predict_waste(image_data):
-    # 1. Convert to RGB (Fixes the transparency error!)
     image_data = image_data.convert('RGB')
-
-    # 2. Resize to 224x224
     size = (224, 224)
     image = ImageOps.fit(image_data, size, Image.Resampling.LANCZOS)
-
-    # 3. Convert to array
     img_array = np.asarray(image)
     img_array = np.expand_dims(img_array, axis=0)
 
-    # 4. Predict
     prediction = model.predict(img_array)
-    return prediction[0][0]
+    score = prediction[0][0]  # This is a number between 0 and 1
+
+    return score
+
+    # ... later in the code, inside the interface section ...
+
+    score = predict_waste(image)
+
+    # --- NEW LOGIC: Check for Confusion ---
+    # If the score is between 0.40 and 0.60, the AI is essentially guessing.
+    if 0.40 < score < 0.60:
+        st.warning(f"⚠️ **Result: UNCERTAIN**")
+        st.write("The model is not sure. This item might not be in the training data.")
+        st.caption(f"Confidence score: {score:.2f} (Too close to 50/50)")
+
+    elif score > 0.60:
+        st.success(f"♻️ **RECYCLABLE** (Confidence: {score:.2f})")
+        st.balloons()  # Fun effect for recyclable items!
+    else:
+        st.success(f"🍎 **ORGANIC** (Confidence: {1 - score:.2f})")
 
 
 # --- INTERFACE ---
