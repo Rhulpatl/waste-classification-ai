@@ -1,0 +1,4 @@
+To run this program , open terminal in same folder in which keep all files and paste below code
+
+
+:      streamlit run app.py
