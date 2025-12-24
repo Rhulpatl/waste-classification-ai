@@ -7,7 +7,7 @@ import os
 # --- PAGE CONFIG ---
 st.set_page_config(page_title="Quick Waste Classifier", layout="centered")
 st.title("♻️ Waste Classifier ")
-st.write("Upload an image to check if it's **Recyclable** or **Organic**.")
+st.write("Upload an image to check if it's **Recyclable**, **Organic**, or **Non-Recyclable**.")
 
 
 # --- LOAD MODEL ---
@@ -24,6 +24,7 @@ def load_model():
 model = load_model()
 
 
+# --- PREDICTION FUNCTION ---
 def predict_waste(image_data):
     image_data = image_data.convert('RGB')
     size = (224, 224)
@@ -36,22 +37,28 @@ def predict_waste(image_data):
 
     return score
 
-    # ... later in the code, inside the interface section ...
 
-    score = predict_waste(image)
+# --- HELPER FUNCTION TO SHOW RESULTS ---
+def display_result(score):
+    # LOGIC:
+    # 0.00 - 0.40  --> Organic (Confident)
+    # 0.40 - 0.60  --> Uncertain / Non-Recyclable (Confused)
+    # 0.60 - 1.00  --> Recyclable (Confident)
 
-    # --- NEW LOGIC: Check for Confusion ---
-    # If the score is between 0.40 and 0.60, the AI is essentially guessing.
-    if 0.40 < score < 0.60:
-        st.warning(f"⚠️ **Result: UNCERTAIN**")
-        st.write("The model is not sure. This item might not be in the training data.")
-        st.caption(f"Confidence score: {score:.2f} (Too close to 50/50)")
-
-    elif score > 0.60:
+    if score > 0.60:
         st.success(f"♻️ **RECYCLABLE** (Confidence: {score:.2f})")
-        st.balloons()  # Fun effect for recyclable items!
-    else:
+        st.info("Place in the Green/Blue bin.")
+        st.balloons()
+
+    elif score < 0.40:
         st.success(f"🍎 **ORGANIC** (Confidence: {1 - score:.2f})")
+        st.info("Place in the Compost/Organic bin.")
+
+    else:
+        # The "Gray Area" (Powerbanks, mixed trash, etc.)
+        st.warning(f"⚠️ **NON-RECYCLABLE / UNCERTAIN**")
+        st.write("The AI is not sure. This might be electronic waste or mixed trash.")
+        st.caption(f"Confidence score: {score:.2f} (Too close to 50/50)")
 
 
 # --- INTERFACE ---
@@ -68,17 +75,11 @@ with tab1:
         st.write("Processing...")
 
         score = predict_waste(image)
+        display_result(score)
 
-        if score > 0.5:
-            st.success(f"♻️ **RECYCLABLE** (Confidence: {score:.2f})")
-        else:
-            st.success(f"🍎 **ORGANIC** (Confidence: {1 - score:.2f})")
-
-# TAB 2: Live Camera (NOW ENABLED!)
+# TAB 2: Live Camera
 with tab2:
     st.header("Live Camera")
-
-    # I have fixed the indentation here for you:
     cam_file = st.camera_input("Take a photo")
 
     if cam_file and model:
@@ -87,8 +88,4 @@ with tab2:
         st.write("Processing...")
 
         score = predict_waste(image)
-
-        if score > 0.5:
-            st.success(f"♻️ **RECYCLABLE** (Confidence: {score:.2f})")
-        else:
-            st.success(f"🍎 **ORGANIC** (Confidence: {1 - score:.2f})")
+        display_result(score)
